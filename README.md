@@ -18,7 +18,7 @@
 * **Dual-Photo Difference Analysis:** Compare baseline and follow-up clinical imagery with automated delta calculation across erythema, lesion border clearance, and surface area.
 * **Healing Trajectory & PASI Metrics:** Tracks Psoriasis Area & Severity Index (PASI), induration, scaling, and recovery velocity over days, weeks, or months.
 
-### 2. 🤖 Multimodal AI Clinical Analysis (Gemini 2.5 Flash)
+### 2. 🤖 Multimodal AI Clinical Analysis (Gemini 3.8 Flash)
 * **Single-Photo Lesion Analysis:** Deep inspection of macroscopic dermatological imagery with granular sub-scores (0–100%) for erythema, induration, and scaling.
 * **Differential Diagnoses:** Confident diagnosis estimations (e.g., Plaque Psoriasis, Atopic Dermatitis, Contact Dermatitis, Seborrheic Dermatitis).
 * **ABCDE Melanoma Screening:** Automated screening for Asymmetry, Border Irregularity, Color Variation, Diameter (>6mm), and Evolution.
