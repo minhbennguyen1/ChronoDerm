@@ -39,9 +39,17 @@ import {
   Map,
   HelpCircle,
 } from 'lucide-react';
-import { SkinTimelineFrame, DermatologyClinic, DermaLensEvaluation } from '../types';
+import {
+  SkinTimelineFrame,
+  DermatologyClinic,
+  DermaLensEvaluation,
+  PatientConsultationRecord,
+  AppointmentRecord,
+  AppointmentRecommendation
+} from '../types';
 import { COMPREHENSIVE_US_DERMATOLOGY_CLINICS } from '../data/dermatologyClinics';
 import { isModerateToSevereDermaLens, getEffectiveIgaScore, getIgaDetails } from '../utils/dermaLensHelper';
+import { PatientScheduleCalendar } from './PatientScheduleCalendar';
 
 export interface DoctorReferralContext {
   frame?: SkinTimelineFrame;
@@ -57,6 +65,22 @@ interface ConnectDoctorSectionProps {
   onClearReferral?: () => void;
   onNavigateToMap?: () => void;
   onNavigateToSlider?: () => void;
+  onSubmitConsultation?: (record: PatientConsultationRecord) => void;
+  appointments?: AppointmentRecord[];
+  onBookAppointment?: (appt: AppointmentRecord) => void;
+  activeRecommendation?: AppointmentRecommendation | null;
+  onAcceptRecommendation?: (rec: AppointmentRecommendation) => void;
+  onDeclineRecommendation?: (rec: AppointmentRecommendation) => void;
+  onCancelAppointment?: (apptId: string) => void;
+}
+ 
+export interface AffiliatedClinic {
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  phone: string;
+  distanceMiles: number;
 }
 
 export interface DoctorProfile {
@@ -75,7 +99,27 @@ export interface DoctorProfile {
   licensedStates: string[];
   consultFee: string;
   phone: string;
+  distanceMiles: number;
+  affiliatedClinicCount: number;
+  affiliatedClinicsSummary: string;
+  affiliatedClinics: AffiliatedClinic[];
 }
+
+export const DOCTOR_RANGE_OPTIONS = [
+  { value: 'ALL', label: 'All Distances' },
+  { value: '15', label: 'Within 15 Miles' },
+  { value: '30', label: 'Within 30 Miles' },
+  { value: '50', label: 'Within 50 Miles' },
+  { value: '100', label: 'Within 100 Miles' },
+] as const;
+
+export const CLINIC_NETWORK_OPTIONS = [
+  { value: 'ALL', label: 'Any Clinic Network' },
+  { value: '10', label: '10+ Clinics' },
+  { value: '20', label: '20+ Clinics' },
+  { value: '50', label: '50+ Clinics (Large Network)' },
+  { value: '100', label: '100+ Clinics (Major)' },
+] as const;
 
 export const ALL_SPECIALTY_FILTERS = [
   'All Specialties',
@@ -105,6 +149,43 @@ export const FEATURED_DOCTORS: DoctorProfile[] = [
     licensedStates: ['NY', 'NJ', 'PA', 'CT', 'FL', 'CA', 'TX', 'IL'],
     consultFee: '$49 Flat or In-Network Insurance',
     phone: '(844) 337-6362',
+    distanceMiles: 4.2,
+    affiliatedClinicCount: 14,
+    affiliatedClinicsSummary: '14 Connected Clinics across Manhattan, Brooklyn & NJ Tri-State Area',
+    affiliatedClinics: [
+      {
+        name: 'Schweiger Dermatology Group - Midtown Flagship',
+        address: '110 E 55th St, 14th Fl',
+        city: 'New York',
+        state: 'NY',
+        phone: '(844) 337-6362',
+        distanceMiles: 4.2,
+      },
+      {
+        name: 'Mount Sinai Doctors Dermatology - Upper East Side',
+        address: '5 E 98th St, 5th Fl',
+        city: 'New York',
+        state: 'NY',
+        phone: '(212) 241-9728',
+        distanceMiles: 5.8,
+      },
+      {
+        name: 'Schweiger Dermatology Group - Flatiron',
+        address: '21 W 19th St',
+        city: 'New York',
+        state: 'NY',
+        phone: '(844) 337-6362',
+        distanceMiles: 6.1,
+      },
+      {
+        name: 'Schweiger Dermatology Group - Downtown Brooklyn',
+        address: '32 Court St, Ste 303',
+        city: 'Brooklyn',
+        state: 'NY',
+        phone: '(844) 337-6362',
+        distanceMiles: 9.4,
+      },
+    ],
   },
   {
     id: 'dr-schweiger',
@@ -122,6 +203,43 @@ export const FEATURED_DOCTORS: DoctorProfile[] = [
     licensedStates: ['NY', 'NJ', 'PA', 'FL', 'CT', 'MA'],
     consultFee: '$49 Flat or In-Network Insurance',
     phone: '(844) 337-6362',
+    distanceMiles: 8.5,
+    affiliatedClinicCount: 110,
+    affiliatedClinicsSummary: '110+ Connected Regional Clinics across NY, NJ, PA, CT & FL',
+    affiliatedClinics: [
+      {
+        name: 'Schweiger Dermatology Group - Midtown Flagship',
+        address: '110 E 55th St, 14th Fl',
+        city: 'New York',
+        state: 'NY',
+        phone: '(844) 337-6362',
+        distanceMiles: 8.5,
+      },
+      {
+        name: 'Schweiger Dermatology Group - Garden City',
+        address: '1300 Franklin Ave, Ste UL1',
+        city: 'Garden City',
+        state: 'NY',
+        phone: '(844) 337-6362',
+        distanceMiles: 18.2,
+      },
+      {
+        name: 'Schweiger Dermatology Group - Paramus',
+        address: '140 E Ridgewood Ave',
+        city: 'Paramus',
+        state: 'NJ',
+        phone: '(844) 337-6362',
+        distanceMiles: 22.0,
+      },
+      {
+        name: 'Schweiger Dermatology Group - Philadelphia Center City',
+        address: '1528 Walnut St, Ste 1500',
+        city: 'Philadelphia',
+        state: 'PA',
+        phone: '(844) 337-6362',
+        distanceMiles: 88.0,
+      },
+    ],
   },
   {
     id: 'dr-lin',
@@ -139,6 +257,35 @@ export const FEATURED_DOCTORS: DoctorProfile[] = [
     licensedStates: ['CA', 'WA', 'OR', 'AZ', 'NV', 'CO'],
     consultFee: '$49 Flat or In-Network Insurance',
     phone: '(800) 843-2287',
+    distanceMiles: 24.0,
+    affiliatedClinicCount: 18,
+    affiliatedClinicsSummary: '18 Academic & Community Dermatology Clinics in Bay Area Network',
+    affiliatedClinics: [
+      {
+        name: 'Stanford Medicine Dermatology Clinic',
+        address: '450 Broadway St, Pavilion B',
+        city: 'Redwood City',
+        state: 'CA',
+        phone: '(650) 723-6316',
+        distanceMiles: 24.0,
+      },
+      {
+        name: 'Stanford Health Care Dermatology - Palo Alto',
+        address: '900 Blake Wilbur Dr',
+        city: 'Palo Alto',
+        state: 'CA',
+        phone: '(650) 723-6316',
+        distanceMiles: 29.5,
+      },
+      {
+        name: 'Bay Area Dermatology Center - San Francisco',
+        address: '2100 Webster St, Ste 405',
+        city: 'San Francisco',
+        state: 'CA',
+        phone: '(415) 923-3000',
+        distanceMiles: 35.0,
+      },
+    ],
   },
   {
     id: 'dr-leavitt',
@@ -156,6 +303,35 @@ export const FEATURED_DOCTORS: DoctorProfile[] = [
     licensedStates: ['FL', 'GA', 'NC', 'SC', 'OH', 'MI', 'VA'],
     consultFee: '$49 Flat or In-Network Insurance',
     phone: '(800) 647-9851',
+    distanceMiles: 42.0,
+    affiliatedClinicCount: 150,
+    affiliatedClinicsSummary: '150+ Nationwide ADCS Dermatology & Clinical Surgery Centers',
+    affiliatedClinics: [
+      {
+        name: 'ADCS Dermatology & Cosmetic Surgery - Orlando Flagship',
+        address: '14050 Town Loop Blvd',
+        city: 'Orlando',
+        state: 'FL',
+        phone: '(800) 647-9851',
+        distanceMiles: 42.0,
+      },
+      {
+        name: 'ADCS Dermatology Center - Tampa Bay',
+        address: '13101 N 30th St',
+        city: 'Tampa',
+        state: 'FL',
+        phone: '(813) 977-2040',
+        distanceMiles: 65.0,
+      },
+      {
+        name: 'ADCS Dermatology & Mohs Surgery - Miami',
+        address: '3850 Bird Rd, Ste 401',
+        city: 'Coral Gables',
+        state: 'FL',
+        phone: '(305) 448-3132',
+        distanceMiles: 95.0,
+      },
+    ],
   },
   {
     id: 'dr-harper',
@@ -166,13 +342,34 @@ export const FEATURED_DOCTORS: DoctorProfile[] = [
     rating: 4.9,
     reviewsCount: 1680,
     specialties: ['Acne & Rosacea', 'Barrier Repair', 'Acute Flare Triage'],
-    telehealthAvailability: 'Available Tomorrow (Morning slots open)',
+    telehealthAvailability: 'Available Tomorrow (Virtual slots open)',
     isAvailableNow: false,
     estWaitMinutes: 60,
     avatarUrl: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=400',
     licensedStates: ['AL', 'GA', 'TN', 'FL', 'MS', 'TX'],
     consultFee: '$49 Flat or In-Network Insurance',
     phone: '(800) 458-3376',
+    distanceMiles: 68.0,
+    affiliatedClinicCount: 8,
+    affiliatedClinicsSummary: '8 Specialized Rosacea & Complex Medical Dermatology Centers',
+    affiliatedClinics: [
+      {
+        name: 'Dermatology & Laser Center of Alabama',
+        address: '200 Missionary Ridge, Ste 110',
+        city: 'Birmingham',
+        state: 'AL',
+        phone: '(205) 978-3336',
+        distanceMiles: 68.0,
+      },
+      {
+        name: 'UAB Medicine Dermatology Clinic',
+        address: 'The Kirklin Clinic, 2000 6th Ave S',
+        city: 'Birmingham',
+        state: 'AL',
+        phone: '(205) 801-8000',
+        distanceMiles: 74.0,
+      },
+    ],
   },
   {
     id: 'dr-libby',
@@ -190,6 +387,27 @@ export const FEATURED_DOCTORS: DoctorProfile[] = [
     licensedStates: ['RI', 'MA', 'CT', 'NY', 'NH', 'ME'],
     consultFee: '$49 Flat or In-Network Insurance',
     phone: '(401) 444-7959',
+    distanceMiles: 18.5,
+    affiliatedClinicCount: 12,
+    affiliatedClinicsSummary: '12 Academic Mohs & Surgical Centers in Brown University Health',
+    affiliatedClinics: [
+      {
+        name: 'Brown University Health Dermatology Clinic',
+        address: '593 Eddy St, APC 10',
+        city: 'Providence',
+        state: 'RI',
+        phone: '(401) 444-7959',
+        distanceMiles: 18.5,
+      },
+      {
+        name: 'Lifespan Physician Group Dermatology - East Greenwich',
+        address: '1454 S County Trail',
+        city: 'East Greenwich',
+        state: 'RI',
+        phone: '(401) 606-3800',
+        distanceMiles: 27.0,
+      },
+    ],
   },
 ];
 
@@ -198,7 +416,19 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
   onClearReferral,
   onNavigateToMap,
   onNavigateToSlider,
+  onSubmitConsultation,
+  appointments = [],
+  onBookAppointment,
+  activeRecommendation,
+  onAcceptRecommendation,
+  onDeclineRecommendation,
+  onCancelAppointment,
 }) => {
+  // Navigation view: 'calendar' (Patient Calendar & Availability) or 'booking' (Connect & Book Visit)
+  const [activeSectionView, setActiveSectionView] = useState<'calendar' | 'booking'>(() => {
+    return referralContext ? 'booking' : 'calendar';
+  });
+
   // Selected doctor
   const [selectedDoctor, setSelectedDoctor] = useState<DoctorProfile>(FEATURED_DOCTORS[0]);
 
@@ -208,8 +438,17 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
   // Doctor Specialty Filter
   const [specialtyFilter, setSpecialtyFilter] = useState<string>('All Specialties');
 
+  // Doctor Range / Distance Filter (miles radius)
+  const [rangeFilter, setRangeFilter] = useState<string>('ALL');
+
+  // Doctor Connected Clinics Network Size Filter
+  const [networkFilter, setNetworkFilter] = useState<string>('ALL');
+
+  // Interactive toggle for viewing doctor's affiliated clinics
+  const [expandedDoctorClinicsId, setExpandedDoctorClinicsId] = useState<string | null>(null);
+
   // Common patient profile fields
-  const [patientName, setPatientName] = useState<string>('Alex Morgan');
+  const [patientName, setPatientName] = useState<string>('Patient');
   const [patientEmail, setPatientEmail] = useState<string>('alex.morgan@example.com');
   const [patientPhone, setPatientPhone] = useState<string>('(555) 392-1048');
   const [patientState, setPatientState] = useState<string>('NY');
@@ -238,7 +477,7 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<number>(today.getDate() + 1);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('10:30 AM');
   const [visitReason, setVisitReason] = useState<string>('Skin Flare & Barrier Assessment');
-  const [sendSmsReminder, setSendSmsReminder] = useState<boolean>(true);
+  const [sendInAppReminder, setSendInAppReminder] = useState<boolean>(true);
 
   // In-Clinic Appointment State
   const [clinicSearchQuery, setClinicSearchQuery] = useState<string>('');
@@ -254,6 +493,7 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
   const [priorTopicalUsage, setPriorTopicalUsage] = useState<string>('Over-the-counter hydrocortisone with no relief');
   const [knownAllergies, setKnownAllergies] = useState<string>('No known drug allergies (NKDA)');
   const [itchingScore, setItchingScore] = useState<number>(7);
+  const [attachImpiricusCopayCard, setAttachImpiricusCopayCard] = useState<boolean>(true);
 
   // Populate triage complaint when referralContext changes
   // Matches Impiricus DermaLens Evaluation Engine: Only connect right away (urgent_video) if moderate to severe (IGA 3 or 4)
@@ -272,6 +512,7 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
       } else {
         setConsultType('scheduled_video');
       }
+      setActiveSectionView('booking');
     }
   }, [referralContext]);
 
@@ -281,22 +522,123 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
     );
   };
 
-  // Filtered doctors by specialty
+  // Filtered doctors by specialty, distance range, and affiliated clinic network size
   const filteredDoctors = useMemo(() => {
-    if (specialtyFilter === 'All Specialties') return FEATURED_DOCTORS;
-    return FEATURED_DOCTORS.filter((doc) =>
-      doc.specialties.some((spec) =>
-        spec.toLowerCase().includes(specialtyFilter.toLowerCase()) ||
-        specialtyFilter.toLowerCase().includes(spec.toLowerCase())
-      )
+    return FEATURED_DOCTORS.filter((doc) => {
+      // 1. Distance / Range filter
+      if (rangeFilter !== 'ALL') {
+        const maxDist = parseFloat(rangeFilter);
+        if (doc.distanceMiles > maxDist) return false;
+      }
+
+      // 2. Connected Clinic Network filter
+      if (networkFilter !== 'ALL') {
+        const minClinics = parseInt(networkFilter, 10);
+        if (doc.affiliatedClinicCount < minClinics) return false;
+      }
+
+      // 3. Specialty filter
+      if (specialtyFilter && specialtyFilter !== 'All Specialties') {
+        const filterLower = specialtyFilter.toLowerCase();
+        const matches = doc.specialties && doc.specialties.some((spec) => {
+          const specLower = (spec || '').toLowerCase();
+          return specLower.includes(filterLower) || filterLower.includes(specLower);
+        });
+        if (!matches) return false;
+      }
+
+      return true;
+    });
+  }, [specialtyFilter, rangeFilter, networkFilter]);
+
+  // One-click select a doctor's connected clinic
+  const handleSelectAffiliatedClinic = (doc: DoctorProfile, affClinic: AffiliatedClinic) => {
+    setSelectedDoctor(doc);
+    const existing = COMPREHENSIVE_US_DERMATOLOGY_CLINICS.find(
+      (c) => c.name.toLowerCase().includes(affClinic.name.toLowerCase()) || affClinic.name.toLowerCase().includes(c.name.toLowerCase())
     );
-  }, [specialtyFilter]);
+    if (existing) {
+      setSelectedClinic(existing);
+    } else {
+      setSelectedClinic({
+        id: `clinic-${doc.id}-${affClinic.name.replace(/\s+/g, '-').toLowerCase()}`,
+        name: affClinic.name,
+        physician: doc.name,
+        address: affClinic.address,
+        city: affClinic.city,
+        state: affClinic.state,
+        zip: '10001',
+        lat: 40.75,
+        lng: -73.98,
+        latitude: 40.75,
+        longitude: -73.98,
+        phone: affClinic.phone,
+        website: 'https://derm-partner.org',
+        rating: 4.9,
+        reviewsCount: 140,
+        specialties: doc.specialties,
+        acceptingNewPatients: true,
+        telehealthAvailable: true,
+        acceptsWalkIns: true,
+        teledermatologyAvailable: true,
+        notes: `Affiliated clinical network of ${doc.name}`,
+      });
+    }
+    setConsultType('in_clinic');
+    setActiveSectionView('booking');
+  };
 
   // Handle Action Submissions for each mode
   const handleLaunchUrgentVideo = () => {
     setIsSubmitting(true);
     const refNum = `CD-URGENT-${Math.floor(100000 + Math.random() * 900000)}`;
     setConsultationRefNumber(refNum);
+
+    if (onSubmitConsultation) {
+      onSubmitConsultation({
+        id: refNum,
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        patientName: patientName || 'Patient',
+        patientPhone,
+        patientEmail,
+        consultType: 'urgent_video',
+        chiefComplaint: chiefComplaint || 'Urgent live triage requested via video consult.',
+        symptoms: selectedSymptoms,
+        refNumber: refNum,
+        submittedAt: new Date().toISOString(),
+        frame: referralContext?.frame,
+        urgencyLevel: 'critical',
+        status: 'pending_review',
+      });
+    }
+
+    if (onBookAppointment) {
+      const now = new Date();
+      const todayIso = now.toISOString().split('T')[0];
+      const todayDay = now.toLocaleDateString('en-US', { weekday: 'long' });
+      onBookAppointment({
+        id: `APT-URGENT-${Date.now()}`,
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        patientId: 'patient-user',
+        patientName: patientName || 'Patient',
+        patientInitials: 'PT',
+        date: todayIso,
+        appointmentDate: todayIso,
+        timeSlot: `${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} (Immediate)`,
+        appointmentTime: 'Now',
+        dayOfWeek: todayDay,
+        consultType: 'urgent_video',
+        type: 'urgent_video',
+        status: 'confirmed',
+        reason: `Urgent Video Triage: ${chiefComplaint || 'Live Dermatologist Telehealth Evaluation'}`,
+        urgency: 'critical',
+        notes: `Direct urgent connection with ${selectedDoctor.name}. Room ref #${refNum}.`,
+        bookedBy: 'patient',
+        matchedWithPatientPortal: true,
+      });
+    }
 
     setTimeout(() => {
       setIsSubmitting(false);
@@ -316,13 +658,60 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const dateStr = `${monthNames[calendarMonth]} ${selectedCalendarDate}, ${calendarYear}`;
 
+    const apptDateObj = new Date(calendarYear, calendarMonth, selectedCalendarDate);
+    const dayOfWeekName = apptDateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const isoDateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(selectedCalendarDate).padStart(2, '0')}`;
+
+    if (onBookAppointment) {
+      onBookAppointment({
+        id: `APT-${Date.now()}`,
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        patientId: 'patient-user',
+        patientName: patientName || 'Patient',
+        patientInitials: 'PT',
+        date: isoDateStr,
+        appointmentDate: isoDateStr,
+        timeSlot: selectedTimeSlot,
+        appointmentTime: selectedTimeSlot,
+        dayOfWeek: dayOfWeekName,
+        consultType: 'scheduled_video',
+        type: 'scheduled_video',
+        status: 'confirmed',
+        reason: visitReason,
+        urgency: isModerateToSevereDermaLens(referralContext?.frame, referralContext?.dermaLensEvaluation) ? 'urgent' : 'routine',
+        notes: chiefComplaint,
+        bookedBy: 'patient',
+        matchedWithPatientPortal: true,
+      });
+    }
+
+    if (onSubmitConsultation) {
+      onSubmitConsultation({
+        id: refNum,
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        patientName: patientName || 'Patient',
+        patientPhone,
+        patientEmail,
+        consultType: 'scheduled_video',
+        chiefComplaint: `${visitReason}. ${chiefComplaint}`.trim(),
+        symptoms: selectedSymptoms,
+        refNumber: refNum,
+        submittedAt: new Date().toISOString(),
+        frame: referralContext?.frame,
+        urgencyLevel: isModerateToSevereDermaLens(referralContext?.frame, referralContext?.dermaLensEvaluation) ? 'critical' : 'standard',
+        status: 'pending_review',
+      });
+    }
+
     setTimeout(() => {
       setIsSubmitting(false);
       setBookingSuccess(true);
       setSuccessNotice({
         title: 'Virtual Visit Confirmed on Your Calendar!',
-        message: `Your appointment with ${selectedDoctor.name}, ${selectedDoctor.credentials} is booked for ${dateStr} at ${selectedTimeSlot} (${patientState} Time).`,
-        subDetails: `A calendar invitation and join link have been dispatched to ${patientEmail}. SMS reminder active for ${patientPhone}.`,
+        message: `Your appointment with ${selectedDoctor.name}, ${selectedDoctor.credentials} is booked for ${dateStr} (${dayOfWeekName}) at ${selectedTimeSlot} (${patientState} Time).`,
+        subDetails: `A calendar invitation and join link have been dispatched to ${patientEmail}. Matched and synchronized with Dr. ${selectedDoctor.name.split(' ')[1] || 'Clinician'}'s HCP portal schedule.`,
       });
     }, 800);
   };
@@ -331,6 +720,56 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
     setIsSubmitting(true);
     const refNum = `CD-CLINIC-${Math.floor(100000 + Math.random() * 900000)}`;
     setConsultationRefNumber(refNum);
+
+    const apptDateObj = new Date(calendarYear, calendarMonth, selectedCalendarDate);
+    const dayOfWeekName = apptDateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const isoDateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(selectedCalendarDate).padStart(2, '0')}`;
+
+    if (onBookAppointment) {
+      const chosenTime = preferredTimeOfDay === 'morning' ? '10:00 AM' : preferredTimeOfDay === 'afternoon' ? '2:30 PM' : '11:15 AM';
+      onBookAppointment({
+        id: `APT-${Date.now()}`,
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        patientId: 'patient-user',
+        patientName: patientName || 'Patient',
+        patientInitials: 'PT',
+        date: isoDateStr,
+        appointmentDate: isoDateStr,
+        timeSlot: chosenTime,
+        appointmentTime: chosenTime,
+        dayOfWeek: dayOfWeekName,
+        consultType: 'in_clinic',
+        type: 'in_clinic',
+        clinicName: selectedClinic.name,
+        clinicAddress: selectedClinic.address,
+        status: 'confirmed',
+        reason: clinicServiceType,
+        urgency: 'routine',
+        notes: `In-Clinic: ${clinicServiceType}. Preferred: ${preferredTimeOfDay}. ${chiefComplaint}`.trim(),
+        bookedBy: 'patient',
+        matchedWithPatientPortal: true,
+      });
+    }
+
+    if (onSubmitConsultation) {
+      onSubmitConsultation({
+        id: refNum,
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        patientName: patientName || 'Patient',
+        patientPhone,
+        patientEmail,
+        consultType: 'in_clinic',
+        chiefComplaint: `In-Clinic: ${clinicServiceType}. Preferred: ${preferredTimeOfDay}. ${chiefComplaint}`.trim(),
+        symptoms: selectedSymptoms,
+        refNumber: refNum,
+        submittedAt: new Date().toISOString(),
+        frame: referralContext?.frame,
+        urgencyLevel: 'standard',
+        status: 'pending_review',
+      });
+    }
 
     setTimeout(() => {
       setIsSubmitting(false);
@@ -348,13 +787,62 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
     const refNum = `CD-ERX-${Math.floor(100000 + Math.random() * 900000)}`;
     setConsultationRefNumber(refNum);
 
+    if (onSubmitConsultation) {
+      onSubmitConsultation({
+        id: refNum,
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        patientName: patientName || 'Patient',
+        patientPhone,
+        patientEmail,
+        consultType: 'async_rx',
+        chiefComplaint: `Digital e-Rx Review. Duration: ${rashDuration}. Itch: ${itchingScore}/10. Prior: ${priorTopicalUsage}. Allergies: ${knownAllergies}. ${chiefComplaint}`.trim(),
+        symptoms: selectedSymptoms,
+        refNumber: refNum,
+        submittedAt: new Date().toISOString(),
+        frame: referralContext?.frame,
+        impiricusCopayAttached: attachImpiricusCopayCard,
+        designatedPharmacy: selectedPharmacy,
+        urgencyLevel: isModerateToSevereDermaLens(referralContext?.frame, referralContext?.dermaLensEvaluation) ? 'critical' : 'standard',
+        status: 'pending_review',
+      });
+    }
+
+    if (onBookAppointment) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowIso = tomorrow.toISOString().split('T')[0];
+      const tomorrowDay = tomorrow.toLocaleDateString('en-US', { weekday: 'long' });
+      onBookAppointment({
+        id: `APT-ASYNC-${Date.now()}`,
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        patientId: 'patient-user',
+        patientName: patientName || 'Patient',
+        patientInitials: 'PT',
+        date: tomorrowIso,
+        appointmentDate: tomorrowIso,
+        timeSlot: '24hr Asynchronous Review',
+        appointmentTime: 'Within 24 Hours',
+        dayOfWeek: tomorrowDay,
+        consultType: 'async_monitoring',
+        type: 'async_monitoring',
+        status: 'confirmed',
+        reason: `Digital Skin Review & e-Rx: ${selectedPharmacy}`,
+        urgency: 'routine',
+        notes: `Digital review packet routed to ${selectedDoctor.name}. Prescription routing: ${selectedPharmacy}.`,
+        bookedBy: 'patient',
+        matchedWithPatientPortal: true,
+      });
+    }
+
     setTimeout(() => {
       setIsSubmitting(false);
       setBookingSuccess(true);
       setSuccessNotice({
         title: 'Digital Skin Review & e-Rx Packet Submitted!',
         message: `Your photo checkpoint and symptom review have been submitted to ${selectedDoctor.name}, ${selectedDoctor.credentials}.`,
-        subDetails: `Guaranteed turnaround within 24 hours. Prescribed medications will be routed directly to ${selectedPharmacy}.`,
+        subDetails: `Guaranteed turnaround within 24 hours. Prescribed medications with ${attachImpiricusCopayCard ? 'Impiricus $0 Co-Pay Savings Card attached' : 'standard pharmacy routing'} dispatched to ${selectedPharmacy}.`,
       });
     }, 800);
   };
@@ -390,13 +878,13 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
     return COMPREHENSIVE_US_DERMATOLOGY_CLINICS.filter((c) => {
       if (selectedClinicState !== 'ALL' && c.state !== selectedClinicState) return false;
       if (!clinicSearchQuery.trim()) return true;
-      const q = clinicSearchQuery.toLowerCase();
+      const q = (clinicSearchQuery || '').toLowerCase().trim();
       return (
-        c.name.toLowerCase().includes(q) ||
-        c.city.toLowerCase().includes(q) ||
-        c.state.toLowerCase().includes(q) ||
-        c.physician.toLowerCase().includes(q) ||
-        c.specialties.some((s) => s.toLowerCase().includes(q))
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.city || '').toLowerCase().includes(q) ||
+        (c.state || '').toLowerCase().includes(q) ||
+        (c.physician || '').toLowerCase().includes(q) ||
+        (c.specialties && c.specialties.some((s) => (s || '').toLowerCase().includes(q)))
       );
     }).slice(0, 8);
   }, [clinicSearchQuery, selectedClinicState]);
@@ -544,8 +1032,172 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
         );
       })()}
 
-      {/* Main 4 Mode Tabs Navigation */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* INCOMING DOCTOR APPOINTMENT INVITATION (Sent from HCP Clinician Portal) */}
+      {activeRecommendation && (
+        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-blue-950/90 via-cyan-950/80 to-indigo-950/90 border-2 border-cyan-400 shadow-2xl shadow-cyan-950/60 flex flex-col gap-4 animate-in fade-in slide-in-from-top-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cyan-500/30">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="text-[11px] font-mono font-black uppercase tracking-wider px-2.5 py-1 rounded-md bg-cyan-400/20 text-cyan-300 border border-cyan-400/40">
+                Action Required: Incoming Appointment Invitation
+              </span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 hidden sm:inline-block">
+                Sent from HCP Clinician Portal
+              </span>
+            </div>
+
+            {activeRecommendation.urgency && (
+              <span className={`text-[10px] font-mono font-bold uppercase px-2.5 py-1 rounded-md self-start sm:self-auto ${
+                activeRecommendation.urgency === 'critical' || activeRecommendation.urgency === 'urgent' || activeRecommendation.urgency === 'high'
+                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+              }`}>
+                Priority: {activeRecommendation.urgency}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+            <div className="flex items-start gap-4">
+              <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-cyan-400 to-blue-600 text-slate-950 flex items-center justify-center shrink-0 shadow-lg shadow-cyan-500/30">
+                <Calendar className="w-7 h-7" />
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-bold text-white">
+                    {activeRecommendation.doctorName}
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    has proposed an appointment for you
+                  </span>
+                </div>
+
+                <div className="text-base sm:text-lg font-black text-cyan-300 flex flex-wrap items-center gap-2">
+                  <Clock className="w-4 h-4 text-cyan-400" />
+                  <span>
+                    {activeRecommendation.recommendedDayOfWeek || 'Upcoming'}, {activeRecommendation.recommendedDate || 'Soon'} at {activeRecommendation.recommendedTimeSlot || '10:00 AM'}
+                  </span>
+                  <span className="text-xs font-mono font-normal px-2 py-0.5 rounded bg-cyan-950 text-cyan-200 border border-cyan-800">
+                    {activeRecommendation.consultType === 'in_clinic' ? 'In-Clinic Exam' : 'Virtual Video Visit'}
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-200 bg-slate-950/60 p-3 rounded-2xl border border-slate-800/90 max-w-3xl italic">
+                  "{activeRecommendation.rationale || activeRecommendation.clinicalRationale || 'Doctor reviewed your longitudinal skin report and recommends clinical checkpoint.'}"
+                </p>
+
+                <p className="text-xs font-bold text-amber-300 pt-0.5">
+                  Would you like to accept this appointment with {activeRecommendation.doctorName}?
+                </p>
+              </div>
+            </div>
+
+            {/* Accept / Decline Decision Buttons */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full lg:w-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  if (onAcceptRecommendation) {
+                    onAcceptRecommendation(activeRecommendation);
+                  }
+                  setActiveSectionView('calendar');
+                }}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500 hover:from-emerald-300 hover:to-cyan-400 text-slate-950 font-black text-xs shadow-xl shadow-emerald-500/25 transition-all hover:scale-[1.02] cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                <span>Accept Appointment</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (onDeclineRecommendation) {
+                    onDeclineRecommendation(activeRecommendation);
+                  }
+                }}
+                className="px-4 py-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-rose-500/50 text-slate-300 hover:text-rose-300 font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                <span>Decline</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation Switcher: Patient Calendar & Availability vs Book Visit */}
+      <div className="p-2 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveSectionView('calendar')}
+            className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-2 ${
+              activeSectionView === 'calendar'
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>My Schedule &amp; Calendar</span>
+            {appointments.filter((a) => a.status !== 'cancelled').length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-cyan-300 text-slate-950">
+                {appointments.filter((a) => a.status !== 'cancelled').length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSectionView('booking')}
+            className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-2 ${
+              activeSectionView === 'booking'
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Stethoscope className="w-4 h-4" />
+            <span>Book New Appointment</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 text-[11px] font-mono text-slate-300 px-3 py-1.5 bg-slate-950/60 rounded-xl border border-slate-800">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Patient Availability: <strong className="text-emerald-300">Open &amp; Synchronized</strong></span>
+        </div>
+      </div>
+
+      {/* VIEW 1: Patient Calendar & Availability */}
+      {activeSectionView === 'calendar' && (
+        <PatientScheduleCalendar
+          appointments={appointments}
+          patientName={patientName}
+          onBookNewAppointment={(date) => {
+            if (date) {
+              const parts = date.split('-');
+              if (parts.length === 3) {
+                setCalendarYear(Number(parts[0]));
+                setCalendarMonth(Number(parts[1]) - 1);
+                setSelectedCalendarDate(Number(parts[2]));
+              }
+            }
+            setActiveSectionView('booking');
+          }}
+          onCancelAppointment={onCancelAppointment}
+          onJoinVideoCall={(appt) => {
+            const matchedDoc = FEATURED_DOCTORS.find((d) => d.id === appt.doctorId) || FEATURED_DOCTORS[0];
+            setSelectedDoctor(matchedDoc);
+            setIsVideoRoomOpen(true);
+          }}
+          onNavigateToClinicMap={onNavigateToMap}
+        />
+      )}
+
+      {/* VIEW 2: Book / Connect with Doctor Workflow */}
+      {activeSectionView === 'booking' && (
+        <>
+          {/* Main 4 Mode Tabs Navigation */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* 1. Urgent Video Visit */}
         <button
           type="button"
@@ -736,7 +1388,7 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-slate-400 block mb-1 font-mono">Phone Number (for SMS Video Link)</label>
+                    <label className="text-slate-400 block mb-1 font-mono">Phone Number (for Telehealth Verification & Access)</label>
                     <input
                       type="tel"
                       value={patientPhone}
@@ -1112,12 +1764,12 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
               <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs">
                 <div className="flex items-center gap-2">
                   <Bell className="w-4 h-4 text-cyan-400" />
-                  <span className="text-slate-300">Send 24-hr &amp; 1-hr SMS reminders to {patientPhone}</span>
+                  <span className="text-slate-300">Send 24-hr &amp; 1-hr In-App Push and Portal Alerts to patient profile</span>
                 </div>
                 <input
                   type="checkbox"
-                  checked={sendSmsReminder}
-                  onChange={(e) => setSendSmsReminder(e.target.checked)}
+                  checked={sendInAppReminder}
+                  onChange={(e) => setSendInAppReminder(e.target.checked)}
                   className="w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 cursor-pointer"
                 />
               </div>
@@ -1171,6 +1823,46 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
                   </button>
                 )}
               </div>
+
+              {/* Doctor's Connected Clinics Fast Picker */}
+              {selectedDoctor.affiliatedClinics && selectedDoctor.affiliatedClinics.length > 0 && (
+                <div className="p-4 rounded-2xl bg-purple-950/30 border border-purple-500/30 space-y-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+                    <span className="font-bold text-purple-300 flex items-center gap-1.5">
+                      <Building2 className="w-4 h-4 text-purple-400 shrink-0" />
+                      <span>{selectedDoctor.name}'s Connected Clinics ({selectedDoctor.affiliatedClinicCount} in network):</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-purple-200/70">1-Click Partner Selection</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {selectedDoctor.affiliatedClinics.map((aff, i) => {
+                      const isMatch = selectedClinic.name === aff.name;
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => handleSelectAffiliatedClinic(selectedDoctor, aff)}
+                          className={`p-3 rounded-xl border text-left text-xs transition-all cursor-pointer ${
+                            isMatch
+                              ? 'bg-purple-900/60 border-purple-400 text-white font-semibold ring-1 ring-purple-400 shadow-md shadow-purple-500/10'
+                              : 'bg-slate-900/90 border-slate-800 text-slate-300 hover:border-purple-500/50 hover:bg-slate-900'
+                          }`}
+                        >
+                          <div className="font-bold text-white truncate flex items-center justify-between gap-1">
+                            <span className="truncate">{aff.name}</span>
+                            {isMatch && <span className="text-[10px] text-purple-300 font-mono shrink-0">Selected ✓</span>}
+                          </div>
+                          <div className="text-[11px] text-slate-400 truncate mt-0.5">{aff.address}, {aff.city}, {aff.state}</div>
+                          <div className="flex items-center justify-between text-[10px] font-mono text-purple-300 mt-1.5 pt-1.5 border-t border-slate-800/60">
+                            <span>📍 {aff.distanceMiles} mi away</span>
+                            <span>{aff.phone}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Clinic Location Search & State Filter */}
               <div className="space-y-3">
@@ -1272,7 +1964,7 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
 
               {/* Preferred Time Window */}
               <div className="space-y-2 text-xs">
-                <label className="text-slate-400 font-mono block">Preferred Arrival Window:</label>
+                <label className="text-slate-400 font-mono block">Preferred Arrival Time:</label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
@@ -1283,7 +1975,7 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
                         : 'bg-slate-950 border-slate-800 text-slate-400'
                     }`}
                   >
-                    <div>Morning</div>
+                    <div>Early (8 AM – 12 PM)</div>
                     <div className="text-[10px] text-slate-400">8:00 AM – 12:00 PM</div>
                   </button>
 
@@ -1484,6 +2176,67 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
                 </div>
               </div>
 
+              {/* Impiricus Manufacturer Co-Pay Savings Card Injection ($0 Patient Copay) */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-cyan-950/40 border border-emerald-500/50 shadow-lg space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-400 to-cyan-500 text-slate-950 flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/30">
+                      <CreditCard className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-black uppercase font-mono tracking-wider px-2 py-0.5 rounded bg-emerald-400/20 text-emerald-300 border border-emerald-400/40">
+                          Impiricus Co-Pay Bridge
+                        </span>
+                        <span className="text-xs font-bold text-white">
+                          Attach Impiricus Manufacturer Co-Pay Savings Card ($0 Patient Copay)
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
+                        Attach an Impiricus-sponsored pharmaceutical co-pay assistance voucher to your digital e-prescription packet. Qualifies eligible commercially insured patients for $0 out-of-pocket prescription copays (up to $1,500/year savings) at checkout.
+                      </p>
+                    </div>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+                    <input
+                      type="checkbox"
+                      checked={attachImpiricusCopayCard}
+                      onChange={(e) => setAttachImpiricusCopayCard(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                  </label>
+                </div>
+
+                {attachImpiricusCopayCard && (
+                  <div className="pt-2.5 border-t border-emerald-500/20 flex flex-col gap-2.5">
+                    {/* Explicit UI note for pharmacy routing */}
+                    <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-start gap-2.5 text-xs text-emerald-200">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <div className="leading-relaxed">
+                        <strong className="text-white font-bold">Automatic Pharmacy Dispatch:</strong> Card will be automatically routed to the designated pharmacy ({selectedPharmacy.split('-')[0].trim()}) with the e-prescription packet.
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                      <div className="p-2.5 rounded-xl bg-slate-950/80 border border-emerald-500/30 flex flex-col">
+                        <span className="text-slate-400 font-mono text-[10px]">Patient Copay:</span>
+                        <span className="text-sm font-black text-emerald-400 font-mono">$0.00 / month</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-950/80 border border-emerald-500/30 flex flex-col">
+                        <span className="text-slate-400 font-mono text-[10px]">Annual Assistance:</span>
+                        <span className="text-sm font-black text-cyan-300 font-mono">Up to $1,500 / yr</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-950/80 border border-emerald-500/30 flex flex-col">
+                        <span className="text-slate-400 font-mono text-[10px]">Direct e-Rx Routing:</span>
+                        <span className="text-xs font-bold text-slate-200 truncate mt-0.5">{selectedPharmacy.split('-')[0]}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Submit e-Rx Review */}
               <button
                 type="button"
@@ -1541,6 +2294,17 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
                 )}
                 <button
                   type="button"
+                  onClick={() => {
+                    setBookingSuccess(false);
+                    setActiveSectionView('calendar');
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 text-xs font-bold shadow transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>View on My Calendar</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setBookingSuccess(false)}
                   className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-colors cursor-pointer"
                 >
@@ -1551,10 +2315,10 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
           )}
         </div>
 
-        {/* Right Column: Available Dermatologists with SPECIALTY FILTER (5 cols) */}
+        {/* Right Column: Available Dermatologists with RANGE & CLINIC NETWORK FILTERS (5 cols) */}
         <div className="lg:col-span-5 flex flex-col gap-6">
           <div className="glass-card p-5 rounded-3xl border border-slate-800 space-y-4">
-            {/* Header with Total Count */}
+            {/* Header with Total Count & Reset */}
             <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -1562,72 +2326,151 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
                   <span>Available Dermatologists</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Board-certified MDs across top US clinical institutions
+                  Board-certified MDs connected with regional clinical networks
                 </p>
               </div>
-              <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold">
-                {filteredDoctors.length} Specialists
-              </span>
-            </div>
-
-            {/* Specialty Filter Feature */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400 font-mono flex items-center gap-1">
-                  <Filter className="w-3 h-3 text-cyan-400" />
-                  <span>Filter by Specialty:</span>
-                </span>
-                {specialtyFilter !== 'All Specialties' && (
+              <div className="flex items-center gap-2">
+                {(rangeFilter !== 'ALL' || networkFilter !== 'ALL' || specialtyFilter !== 'All Specialties') && (
                   <button
                     type="button"
-                    onClick={() => setSpecialtyFilter('All Specialties')}
-                    className="text-[11px] text-cyan-400 hover:underline font-mono cursor-pointer"
+                    onClick={() => {
+                      setRangeFilter('ALL');
+                      setNetworkFilter('ALL');
+                      setSpecialtyFilter('All Specialties');
+                    }}
+                    className="text-[10px] text-cyan-400 hover:underline font-mono cursor-pointer"
                   >
-                    Reset Filter
+                    Reset Filters
                   </button>
                 )}
+                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold">
+                  {filteredDoctors.length} Specialists
+                </span>
+              </div>
+            </div>
+
+            {/* Range & Network Filters */}
+            <div className="space-y-3 bg-slate-950/70 p-3 rounded-2xl border border-slate-800/80 text-xs">
+              {/* Doctor Range / Distance Filter */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-cyan-400" />
+                    <span>Doctor Range / Distance:</span>
+                  </span>
+                  {rangeFilter !== 'ALL' && (
+                    <span className="text-cyan-400 font-bold">≤ {rangeFilter} miles</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {DOCTOR_RANGE_OPTIONS.map((opt) => {
+                    const isActive = rangeFilter === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setRangeFilter(opt.value)}
+                        className={`px-2 py-0.8 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-cyan-500 text-slate-950 font-bold shadow'
+                            : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Specialty Pills Horizontal Scroll / Wrap */}
-              <div className="flex flex-wrap gap-1.5">
-                {ALL_SPECIALTY_FILTERS.map((specialty) => {
-                  const isActive = specialtyFilter === specialty;
-                  return (
-                    <button
-                      key={specialty}
-                      type="button"
-                      onClick={() => setSpecialtyFilter(specialty)}
-                      className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition-all cursor-pointer ${
-                        isActive
-                          ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20 scale-105'
-                          : 'bg-slate-900/90 text-slate-400 hover:text-slate-200 border border-slate-800'
-                      }`}
-                    >
-                      {specialty}
-                    </button>
-                  );
-                })}
+              {/* Connected Clinic Network Size Filter */}
+              <div className="space-y-1.5 pt-2 border-t border-slate-800/60">
+                <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <Building2 className="w-3 h-3 text-purple-400" />
+                    <span>Clinic Network Size:</span>
+                  </span>
+                  {networkFilter !== 'ALL' && (
+                    <span className="text-purple-300 font-bold">≥ {networkFilter} clinics</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {CLINIC_NETWORK_OPTIONS.map((opt) => {
+                    const isActive = networkFilter === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setNetworkFilter(opt.value)}
+                        className={`px-2 py-0.8 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-purple-500 text-slate-950 font-bold shadow'
+                            : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Specialty Filter */}
+              <div className="space-y-1.5 pt-2 border-t border-slate-800/60">
+                <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <Filter className="w-3 h-3 text-emerald-400" />
+                    <span>Clinical Specialty:</span>
+                  </span>
+                  {specialtyFilter !== 'All Specialties' && (
+                    <span className="text-emerald-300 font-bold">{specialtyFilter}</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {ALL_SPECIALTY_FILTERS.map((specialty) => {
+                    const isActive = specialtyFilter === specialty;
+                    return (
+                      <button
+                        key={specialty}
+                        type="button"
+                        onClick={() => setSpecialtyFilter(specialty)}
+                        className={`px-2 py-0.8 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-emerald-500 text-slate-950 font-bold shadow'
+                            : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                        }`}
+                      >
+                        {specialty}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
             {/* Doctors List */}
-            <div className="space-y-3 max-h-[580px] overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-[620px] overflow-y-auto pr-1">
               {filteredDoctors.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400 font-mono">
-                  No specialists found matching "{specialtyFilter}".
-                  <div className="mt-2">
+                <div className="py-8 text-center text-xs text-slate-400 font-mono space-y-2">
+                  <p>No specialists found matching your active range, network, or specialty filters.</p>
+                  <div>
                     <button
                       type="button"
-                      onClick={() => setSpecialtyFilter('All Specialties')}
-                      className="text-cyan-400 underline cursor-pointer"
+                      onClick={() => {
+                        setRangeFilter('ALL');
+                        setNetworkFilter('ALL');
+                        setSpecialtyFilter('All Specialties');
+                      }}
+                      className="px-3 py-1 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 text-xs font-bold cursor-pointer"
                     >
-                      Show All Specialties
+                      Clear All Filters
                     </button>
                   </div>
                 </div>
               ) : (
                 filteredDoctors.map((doc) => {
                   const isSelected = selectedDoctor.id === doc.id;
+                  const isClinicsExpanded = expandedDoctorClinicsId === doc.id;
                   return (
                     <div
                       key={doc.id}
@@ -1659,19 +2502,43 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
                             {doc.hospitalAffiliation}
                           </p>
 
+                          {/* Distance Range & Connected Clinic Count Badges */}
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-950/70 border border-cyan-500/30 text-cyan-300 flex items-center gap-1">
+                              <MapPin className="w-2.5 h-2.5" />
+                              <span>{doc.distanceMiles} mi away</span>
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedDoctorClinicsId(isClinicsExpanded ? null : doc.id);
+                              }}
+                              className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-950/70 border border-purple-500/30 text-purple-300 hover:border-purple-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                              title="Click to toggle connected clinics"
+                            >
+                              <Building2 className="w-2.5 h-2.5" />
+                              <span>{doc.affiliatedClinicCount} Connected Clinics</span>
+                              <span className="text-[8px] font-bold ml-0.5">{isClinicsExpanded ? '▲' : '▼'}</span>
+                            </button>
+                          </div>
+
                           {/* Specialties with highlighted active match */}
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {doc.specialties.map((sp, idx) => {
+                              const filterLower = (specialtyFilter || '').toLowerCase();
+                              const spLower = (sp || '').toLowerCase();
                               const matchesFilter =
+                                specialtyFilter &&
                                 specialtyFilter !== 'All Specialties' &&
-                                (sp.toLowerCase().includes(specialtyFilter.toLowerCase()) ||
-                                  specialtyFilter.toLowerCase().includes(sp.toLowerCase()));
+                                (spLower.includes(filterLower) || filterLower.includes(spLower));
                               return (
                                 <span
                                   key={idx}
                                   className={`text-[9px] font-mono px-1.5 py-0.2 rounded border ${
                                     matchesFilter
-                                      ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-bold'
+                                      ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold'
                                       : 'bg-slate-950 border-slate-800 text-slate-400'
                                   }`}
                                 >
@@ -1680,6 +2547,43 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
                               );
                             })}
                           </div>
+
+                          {/* Interactive Connected Clinics Accordion Drawer */}
+                          {isClinicsExpanded && doc.affiliatedClinics && doc.affiliatedClinics.length > 0 && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="mt-2.5 p-2.5 rounded-xl bg-slate-950/90 border border-purple-500/40 space-y-2 text-xs"
+                            >
+                              <div className="flex items-center justify-between text-[10px] font-mono text-purple-300 font-bold">
+                                <span>Affiliated Clinic Network ({doc.affiliatedClinicCount} total):</span>
+                                <span className="text-slate-400 font-normal">Click to book here</span>
+                              </div>
+                              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                                {doc.affiliatedClinics.map((aff, affIdx) => (
+                                  <div
+                                    key={affIdx}
+                                    className="p-2 rounded-lg bg-slate-900/90 border border-slate-800 flex flex-col gap-1"
+                                  >
+                                    <div className="flex items-start justify-between gap-1">
+                                      <span className="font-bold text-white text-[11px] truncate">{aff.name}</span>
+                                      <span className="text-[9px] font-mono text-cyan-300 shrink-0">📍 {aff.distanceMiles} mi</span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 truncate">{aff.address}, {aff.city}, {aff.state}</p>
+                                    <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                                      <span className="text-[9px] font-mono text-slate-400">{aff.phone}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSelectAffiliatedClinic(doc, aff)}
+                                        className="px-2 py-0.5 rounded bg-purple-500/20 hover:bg-purple-500/40 text-purple-200 border border-purple-400/40 text-[9px] font-bold cursor-pointer transition-colors"
+                                      >
+                                        Book In-Clinic Here
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-800/80 text-[10px] font-mono">
                             <span className="text-emerald-400 flex items-center gap-1">
@@ -1694,8 +2598,9 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
                                   e.stopPropagation();
                                   setSelectedDoctor(doc);
                                   setConsultType('scheduled_video');
+                                  setActiveSectionView('booking');
                                 }}
-                                className="px-2 py-0.8 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-400/40 text-[10px] transition-colors"
+                                className="px-2 py-0.8 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-400/40 text-[10px] transition-colors cursor-pointer"
                                 title="Schedule on calendar"
                               >
                                 Calendar
@@ -1707,9 +2612,10 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
                                   e.stopPropagation();
                                   setSelectedDoctor(doc);
                                   setConsultType('urgent_video');
+                                  setActiveSectionView('booking');
                                   handleLaunchUrgentVideo();
                                 }}
-                                className="px-2 py-0.8 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold border border-cyan-400/40 text-[10px] transition-colors"
+                                className="px-2 py-0.8 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold border border-cyan-400/40 text-[10px] transition-colors cursor-pointer"
                               >
                                 Connect Now
                               </button>
@@ -1782,6 +2688,8 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {/* Simulated Live Teledermatology Video Consultation Room Modal (Urgent Video Visit) */}
       {isVideoRoomOpen && (

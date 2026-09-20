@@ -1,3 +1,142 @@
+export type UserRole = 'patient' | 'hcp';
+
+export type ClinicalDirectiveType = 'escalate_regimen' | 'invite_sample' | 'request_daily_scans';
+
+export interface ClinicalDirective {
+  id: string;
+  type: ClinicalDirectiveType;
+  doctorName: string;
+  patientInitials?: string;
+  patientId?: string;
+  title: string;
+  message: string;
+  subtext?: string;
+  createdAt: string;
+  acknowledged?: boolean;
+  actionPayload?: {
+    copayUrl?: string;
+    sampleDrug?: string;
+    frequency?: string;
+  };
+}
+
+export interface SampleRequestOrder {
+  id: string;
+  doctorId: string;
+  patientInitials: string;
+  drugName: string;
+  status: 'dispatched' | 'pending' | 'delivered' | 'in_transit' | string;
+  orderDate: string;
+  clinicAddress?: string;
+  patientCondition?: string;
+  patientAge?: number;
+  trackingNumber?: string;
+  dosageDetails?: string;
+}
+
+export interface CopayCardRecord {
+  id: string;
+  cardVoucherId: string;
+  patientName: string;
+  patientInitials: string;
+  doctorId: string;
+  doctorName: string;
+  drugName: string;
+  condition: string;
+  designatedPharmacy: string;
+  binNumber: string;
+  pcnNumber: string;
+  groupId: string;
+  memberId: string;
+  copayAmount: string;
+  maxAnnualSavings: string;
+  issuedDate: string;
+  status: 'active' | 'routed_to_pharmacy' | 'redeemed';
+  notes?: string;
+}
+
+export interface AppointmentRecord {
+  id: string;
+  patientName: string;
+  patientInitials: string;
+  patientId?: string;
+  patientEmail?: string;
+  patientPhone?: string;
+  doctorId: string;
+  doctorName: string;
+  clinicName?: string;
+  clinicAddress?: string;
+  date: string;
+  appointmentDate?: string;
+  dayOfWeek: string;
+  timeSlot: string;
+  appointmentTime?: string;
+  consultType: 'scheduled_video' | 'in_clinic' | 'urgent_flare' | 'async_monitoring' | string;
+  type?: string;
+  reason: string;
+  urgency?: string;
+  notes?: string;
+  status: 'confirmed' | 'pending' | 'completed' | 'cancelled';
+  source?: 'patient_portal' | 'doctor_recommended' | 'matched';
+  bookedBy?: 'patient' | 'doctor';
+  matchedWithPatientPortal?: boolean;
+  doctorRecommendationNotes?: string;
+  dataReportContext?: {
+    igaScore: number;
+    erythemaIndex: number;
+    condition: string;
+    lastCheckpointDate: string;
+  };
+  createdAt?: string;
+}
+
+export interface AppointmentRecommendation {
+  id: string;
+  patientId: string;
+  patientName: string;
+  patientInitials?: string;
+  doctorId: string;
+  doctorName: string;
+  recommendedTimeframe?: string;
+  recommendedDate?: string;
+  recommendedDateFormatted?: string;
+  recommendedDayOfWeek?: string;
+  recommendedTimeSlot?: string;
+  urgency?: string;
+  condition?: string;
+  rationale?: string;
+  consultType?: 'scheduled_video' | 'in_clinic' | 'urgent_flare' | 'async_monitoring' | string;
+  clinicalRationale?: string;
+  dataReportSummary?: {
+    igaScore: number;
+    erythemaIndex: number;
+    condition: string;
+    flareStatus: string;
+  };
+  status?: 'pending_patient_confirmation' | 'accepted' | 'declined';
+  sentAt?: string;
+  createdAt?: string;
+}
+
+export interface PatientConsultationRecord {
+  id: string;
+  doctorId: string;
+  doctorName: string;
+  patientName: string;
+  patientPhone: string;
+  patientEmail: string;
+  consultType: 'urgent_video' | 'scheduled_video' | 'in_clinic' | 'async_rx';
+  chiefComplaint: string;
+  symptoms: string[];
+  refNumber: string;
+  submittedAt: string;
+  frame?: SkinTimelineFrame;
+  impiricusCopayAttached?: boolean;
+  designatedPharmacy?: string;
+  urgencyLevel?: 'critical' | 'standard';
+  status: 'pending_review' | 'reviewed' | 'rx_dispatched';
+}
+
 export type DermaLensCondition =
   | 'Acne Vulgaris'
   | 'Atopic Dermatitis (Eczema)'
@@ -108,6 +247,8 @@ export interface DermatologyClinic {
   zip: string;
   lat: number;
   lng: number;
+  latitude?: number;
+  longitude?: number;
   phone: string;
   website: string;
   rating: number;
@@ -115,7 +256,27 @@ export interface DermatologyClinic {
   specialties: string[];
   acceptingNewPatients: boolean;
   telehealthAvailable: boolean;
+  acceptsWalkIns?: boolean;
+  teledermatologyAvailable?: boolean;
   notes: string;
+}
+
+export interface ClinicReferral {
+  id: string;
+  clinicId: string;
+  clinicName: string;
+  clinicAddress: string;
+  clinicPhone: string;
+  clinicPhysician: string;
+  clinicSpecialties: string[];
+  patientId: string;
+  patientName: string;
+  referringDoctorName?: string;
+  priority: 'routine' | 'expedited_flare' | 'urgent';
+  referralReason: string;
+  notes?: string;
+  createdAt: string;
+  status: 'dispatched' | 'scheduled' | 'pending';
 }
 
 export interface UserAccount {
@@ -140,6 +301,9 @@ export interface ClinicalCase {
   adherenceRate: number; // e.g. 96%
   frames: SkinTimelineFrame[];
   isicReferenceId?: string;
+  assignedDoctorId?: string;
+  consultations?: PatientConsultationRecord[];
+  appointmentRecommendation?: AppointmentRecommendation;
 }
 
 export interface CameraAlignmentTelemetry {

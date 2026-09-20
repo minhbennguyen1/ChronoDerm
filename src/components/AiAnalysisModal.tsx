@@ -173,7 +173,7 @@ export const AiAnalysisModal: React.FC<AiAnalysisModalProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-rose-100/90 mt-1 max-w-xl leading-relaxed">
-                    The Impiricus DermaLens Evaluation Engine identified active {dermaLens?.detected_condition || conditionName} with {igaDetails.severityGroup.toLowerCase()} severity (IGA score {effectiveIga}/4, Suboptimal Status). Clinical triage rubrics advise connecting with a board-certified dermatologist right away.
+                    The Impiricus DermaLens Evaluation Engine identified active {dermaLens?.detected_condition || conditionName} with {(igaDetails?.severityGroup || 'moderate').toLowerCase()} severity (IGA score {effectiveIga}/4, Suboptimal Status). Clinical triage rubrics advise connecting with a board-certified dermatologist right away.
                   </p>
                 </div>
               </div>
