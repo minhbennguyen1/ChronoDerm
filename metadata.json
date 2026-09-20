@@ -1,0 +1,10 @@
+{
+  "name": "ChronoDerm",
+  "description": "Clinical skin time-machine featuring AI-powered single photo & longitudinal difference analysis, urgent low-score doctor connection triage, interactive AI dermatology assistant, and live US clinic locator.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
