@@ -449,7 +449,7 @@ export const ConnectDoctorSection: React.FC<ConnectDoctorSectionProps> = ({
 
   // Common patient profile fields
   const [patientName, setPatientName] = useState<string>('Patient');
-  const [patientEmail, setPatientEmail] = useState<string>('alex.morgan@example.com');
+  const [patientEmail, setPatientEmail] = useState<string>('patient.care@example.com');
   const [patientPhone, setPatientPhone] = useState<string>('(555) 392-1048');
   const [patientState, setPatientState] = useState<string>('NY');
   const [chiefComplaint, setChiefComplaint] = useState<string>('');

@@ -198,7 +198,7 @@ export const HcpSampleCopayDatabase: React.FC<HcpSampleCopayDatabaseProps> = ({
   const handleCreateCopayCard = (e: React.FormEvent) => {
     e.preventDefault();
     const selectedCase = cases.find((c) => c.id === copayPatientId) || cases[0];
-    const patientName = selectedCase ? `Patient ${selectedCase.patientInitials}` : 'Alex Morgan';
+    const patientName = selectedCase ? `Patient ${selectedCase.patientInitials}` : 'Patient';
     const patientInitials = selectedCase?.patientInitials || 'A.M.';
     const newCard: CopayCardRecord = {
       id: `CPY-${Math.floor(100 + Math.random() * 900)}`,

@@ -466,9 +466,9 @@ export function App() {
       id: `APT-${Date.now()}`,
       doctorId: rec.doctorId,
       doctorName: rec.doctorName,
-      patientId: rec.patientId || 'patient-alex-morgan',
-      patientName: rec.patientName || 'Alex Morgan',
-      patientInitials: rec.patientInitials || 'A.M.',
+      patientId: rec.patientId || (currentUser?.id ? `patient-${currentUser.id}` : 'patient-user'),
+      patientName: rec.patientName || currentUser?.name || 'Patient',
+      patientInitials: rec.patientInitials || 'PT',
       date: isoDate,
       appointmentDate: isoDate,
       timeSlot: rec.recommendedTimeSlot || '10:00 AM',
@@ -745,6 +745,7 @@ export function App() {
         onToggleRole={handleToggleRole}
         activeDoctorName="Dr. Rachel Nazarian, MD"
         pendingTriageCount={pendingTriageCount}
+        hasPendingRecommendation={!!activeRecommendation}
       />
 
       {/* Demo Banner for New Users (Try Now Mode) */}

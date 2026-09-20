@@ -94,9 +94,9 @@ export const UsDermatologyMap: React.FC<UsDermatologyMapProps> = ({
   // Patient Contact Clinic Modal State
   const [contactModalClinic, setContactModalClinic] = useState<DermatologyClinic | null>(null);
   const [contactReferralAttached, setContactReferralAttached] = useState<ClinicReferral | null>(null);
-  const [patientContactName, setPatientContactName] = useState<string>('Alex Morgan');
+  const [patientContactName, setPatientContactName] = useState<string>('Patient');
   const [patientContactPhone, setPatientContactPhone] = useState<string>('(555) 019-2834');
-  const [patientContactEmail, setPatientContactEmail] = useState<string>('alex.morgan@example.com');
+  const [patientContactEmail, setPatientContactEmail] = useState<string>('patient.care@example.com');
   const [preferredContactMethod, setPreferredContactMethod] = useState<'phone' | 'email' | 'sms'>('phone');
   const [preferredTimeOfDay, setPreferredTimeOfDay] = useState<'morning' | 'afternoon' | 'anytime'>('morning');
   const [contactReason, setContactReason] = useState<string>('Consultation & Biologic Step-Therapy');
@@ -305,7 +305,7 @@ export const UsDermatologyMap: React.FC<UsDermatologyMapProps> = ({
     if (!clinicToRefer) return;
     setIsReferSubmitting(true);
 
-    let patientName = 'Alex Morgan';
+    let patientName = 'Patient';
     if (referralPatientId === 'custom') {
       patientName = customPatientName.trim() || 'Patient';
     } else {

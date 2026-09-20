@@ -80,7 +80,8 @@ export const PatientScheduleCalendar: React.FC<PatientScheduleCalendarProps> = (
     if (appointments.length > 0) {
       const activeAppts = appointments.filter((a) => a.status !== 'cancelled');
       if (activeAppts.length > 0) {
-        const targetAppt = activeAppts[activeAppts.length - 1];
+        // Appending/prepending adds newest appointments to the front (index 0)
+        const targetAppt = activeAppts[0];
         const rawDate = targetAppt.date || targetAppt.appointmentDate || '';
         const norm = normalizeDateKey(rawDate);
         if (norm) {
@@ -422,7 +423,13 @@ export const PatientScheduleCalendar: React.FC<PatientScheduleCalendarProps> = (
                   <button
                     key={`${cell.dateKey}-${idx}`}
                     type="button"
-                    onClick={() => setSelectedDate(cell.date)}
+                    onClick={() => {
+                      setSelectedDate(cell.date);
+                      if (!cell.isCurrentMonth) {
+                        setCurrentYear(cell.date.getFullYear());
+                        setCurrentMonth(cell.date.getMonth());
+                      }
+                    }}
                     className={`min-h-[64px] sm:min-h-[72px] p-1.5 rounded-xl text-left flex flex-col justify-between transition-all cursor-pointer relative ${
                       cell.isSelected
                         ? 'bg-gradient-to-br from-cyan-950 to-blue-950 border-2 border-cyan-400 shadow-md shadow-cyan-500/20'

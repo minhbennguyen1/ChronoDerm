@@ -36,6 +36,7 @@ interface NavbarProps {
   onToggleRole: (role: UserRole) => void;
   activeDoctorName?: string;
   pendingTriageCount?: number;
+  hasPendingRecommendation?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -52,6 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleRole,
   activeDoctorName = 'Dr. Rachel Nazarian, MD',
   pendingTriageCount = 0,
+  hasPendingRecommendation = false,
 }) => {
   const activeCase = cases.find((c) => c.id === activeCaseId) || cases[0];
 
@@ -167,11 +169,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <Stethoscope className="w-3.5 h-3.5 text-rose-400" />
                 <span>Connect Doctor</span>
-                {hasLowScoreAlert && (
+                {hasPendingRecommendation ? (
+                  <span className="px-1.5 py-0.2 rounded-full bg-cyan-400 text-slate-950 font-mono text-[9px] font-black animate-pulse shadow-sm">
+                    1 Invite
+                  </span>
+                ) : hasLowScoreAlert ? (
                   <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-mono text-[9px] font-black animate-pulse">
                     Urgent
                   </span>
-                )}
+                ) : null}
               </button>
 
               <button

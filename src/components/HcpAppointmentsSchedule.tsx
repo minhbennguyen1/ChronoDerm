@@ -107,6 +107,22 @@ export const HcpAppointmentsSchedule: React.FC<HcpAppointmentsScheduleProps> = (
   const [calMonth, setCalMonth] = useState<number>(defaultCalDate.getMonth());
   const [selectedDate, setSelectedDate] = useState<Date>(defaultCalDate);
 
+  // Auto-jump to newest appointment when appointments list changes
+  React.useEffect(() => {
+    if (appointments.length > 0) {
+      const activeAppts = appointments.filter((a) => a.status !== 'cancelled');
+      if (activeAppts.length > 0) {
+        const targetAppt = activeAppts[0];
+        const parsed = parseAppointmentDate(targetAppt.date || targetAppt.appointmentDate || '');
+        if (parsed) {
+          setCalYear(parsed.year);
+          setCalMonth(parsed.month);
+          setSelectedDate(new Date(parsed.year, parsed.month, parsed.day));
+        }
+      }
+    }
+  }, [appointments.length]);
+
   // Calendar month navigation
   const handlePrevMonth = () => {
     if (calMonth === 0) {
@@ -405,7 +421,13 @@ export const HcpAppointmentsSchedule: React.FC<HcpAppointmentsScheduleProps> = (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setSelectedDate(dayItem.date)}
+                    onClick={() => {
+                      setSelectedDate(dayItem.date);
+                      if (!dayItem.isCurrentMonth) {
+                        setCalYear(dayItem.date.getFullYear());
+                        setCalMonth(dayItem.date.getMonth());
+                      }
+                    }}
                     className={`min-h-[72px] sm:min-h-[82px] p-1.5 rounded-2xl border flex flex-col justify-between text-left transition-all cursor-pointer relative ${
                       isSelected
                         ? 'bg-blue-950/70 border-cyan-400 shadow-lg shadow-cyan-500/20 ring-2 ring-cyan-400/50'
